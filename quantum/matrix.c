@@ -256,7 +256,18 @@ __attribute__((weak)) void matrix_read_rows_on_col(matrix_row_t current_matrix[]
 
     // Unselect col
     unselect_col(current_col);
-    matrix_output_unselect_delay(current_col, key_pressed); // wait for all Row signals to go HIGH
+
+    // wait for all Row signals to go HIGH
+    // matrix_output_unselect_delay(current_col, key_pressed);
+    if (key_pressed) {  // wait for col signal to go HIGH
+        pin_t state;
+        do {
+            state = 0;
+            for (uint8_t row_index = 0; row_index < ROWS_PER_HAND; row_index++) {
+                state |= (readPin(row_pins[row_index]) == 0);
+            }
+        } while (state);
+    }
 }
 
 #        else
