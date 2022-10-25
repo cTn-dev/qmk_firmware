@@ -264,7 +264,7 @@ __attribute__((weak)) void matrix_read_rows_on_col(matrix_row_t current_matrix[]
         do {
             state = 0;
             for (uint8_t row_index = 0; row_index < ROWS_PER_HAND; row_index++) {
-                state |= (readPin(row_pins[row_index]) == 0);
+                state |= (readMatrixPin(row_pins[row_index]) == 0);
             }
         } while (state);
     }
