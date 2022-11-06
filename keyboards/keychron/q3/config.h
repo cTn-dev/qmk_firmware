@@ -31,21 +31,21 @@
 #define DRIVER_ADDR_1 0b1110111
 #define DRIVER_ADDR_2 0b1110100
 
-/* Increase I2C speed to 1000 KHz (Unfortunately calculated with Analog Noise Filter enabled, 0x00300F33) */
-/*
+/* Increase I2C speed to 1000 KHz (Calculated accounting for Analog Noise Filter which is enabled by default, 0x00300F33) */
 #define I2C1_TIMINGR_PRESC 0U
 #define I2C1_TIMINGR_SCLDEL 3U
 #define I2C1_TIMINGR_SDADEL 0U
 #define I2C1_TIMINGR_SCLH 15U
 #define I2C1_TIMINGR_SCLL 51U
-*/
 
 /* I2C 1000 KHz (ANF OFF, 0x00301238) */
+/*
 #define I2C1_TIMINGR_PRESC 0U
 #define I2C1_TIMINGR_SCLDEL 3U
 #define I2C1_TIMINGR_SDADEL 0U
 #define I2C1_TIMINGR_SCLH 18U
 #define I2C1_TIMINGR_SCLL 56U
+*/
 
 /* I2C 800 KHz (ANF OFF, 0x0030124C) */
 /*
