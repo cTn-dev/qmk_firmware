@@ -192,20 +192,8 @@ uint8_t rgb_matrix_map_row_column_to_led(uint8_t row, uint8_t column, uint8_t *l
     return led_count;
 }
 
-// BEGIN 2nd thread experiment
-static thread_reference_t trp = NULL;
-THD_WORKING_AREA(waThread1, 128);
-THD_FUNCTION(Thread1, arg) {
-  while (true) {
-    chThdSuspendS(&trp); // start in suspended state
-    rgb_matrix_driver.flush();
-  }
-};
-// END 2nd thread experiment
-
 void rgb_matrix_update_pwm_buffers(void) {
-    chThdResume(&trp, MSG_OK);
-    chThdYield();
+    rgb_matrix_driver.flush();
 }
 
 void rgb_matrix_set_color(int index, uint8_t red, uint8_t green, uint8_t blue) {
@@ -491,10 +479,6 @@ __attribute__((weak)) void rgb_matrix_indicators_advanced_user(uint8_t led_min, 
 
 void rgb_matrix_init(void) {
     rgb_matrix_driver.init();
-
-    // BEGIN start 2nd thread
-    chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO + 10, Thread1, NULL);
-    // END start 2nd thread
 
 #ifdef RGB_MATRIX_KEYREACTIVE_ENABLED
     g_last_hit_tracker.count = 0;
