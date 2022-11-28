@@ -34,3 +34,5 @@
 /* Enable CapsLcok LED */
 #define CAPS_LOCK_LED_INDEX 50
 
+#define DEBUG_MATRIX_SCAN_RATE
+#define MATRIX_IO_DELAY 5
