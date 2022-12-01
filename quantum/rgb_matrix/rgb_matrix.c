@@ -137,6 +137,10 @@ static last_hit_t last_hit_buffer;
 const uint8_t k_rgb_matrix_split[2] = RGB_MATRIX_SPLIT;
 #endif
 
+// RGB on separate thread
+static THD_WORKING_AREA(rgb_thread_wa, 512);
+static thread_t *rgb_thread_p;
+
 EECONFIG_DEBOUNCE_HELPER(rgb_matrix, EECONFIG_RGB_MATRIX, rgb_matrix_config);
 
 void eeconfig_update_rgb_matrix(void) {
@@ -409,7 +413,7 @@ static void rgb_task_flush(uint8_t effect) {
     rgb_task_state = SYNCING;
 }
 
-void rgb_matrix_task(void) {
+void rgb_matrix_task_impl(void) {
     rgb_task_timers();
 
     // Ideally we would also stop sending zeros to the LED driver PWM buffers
@@ -440,6 +444,43 @@ void rgb_matrix_task(void) {
             rgb_task_sync();
             break;
     }
+}
+
+static THD_FUNCTION(rgb_matrix_threadfunc, arg) {
+    msg_t ret = MSG_OK;
+    (void)arg;
+
+    while (!chThdShouldTerminateX()) {
+        chThdYield();
+        if (chThdShouldTerminateX())
+            break;
+        rgb_matrix_task_impl();
+    }
+    chThdExit(ret);
+}
+
+void rgb_matrix_task(void) {
+    chThdYield();
+}
+
+static void rgb_matrix_init_task(void) {
+    if (rgb_thread_p)
+        return;
+    rgb_thread_p = chThdCreateStatic(rgb_thread_wa, sizeof(rgb_thread_wa), NORMALPRIO, rgb_matrix_threadfunc, NULL);
+    chThdYield();
+}
+
+static void rgb_matrix_terminate_task(void) {
+    if (!rgb_thread_p)
+        return;
+    chThdTerminate(rgb_thread_p);
+
+    if (!chThdTerminatedX(rgb_thread_p))
+        chThdYield();
+    while (!chThdTerminatedX(rgb_thread_p))
+        chThdSleep(1);
+
+    rgb_thread_p = NULL;
 }
 
 void rgb_matrix_indicators(void) {
@@ -510,11 +551,13 @@ void rgb_matrix_init(void) {
 
 void rgb_matrix_set_suspend_state(bool state) {
 #ifdef RGB_DISABLE_WHEN_USB_SUSPENDED
+    rgb_matrix_terminate_task();
     if (state && !suspend_state) { // only run if turning off, and only once
         rgb_task_render(0);        // turn off all LEDs when suspending
         rgb_task_flush(0);         // and actually flash led state to LEDs
     }
     suspend_state = state;
+    rgb_matrix_init_task();
 #endif
 }
 
